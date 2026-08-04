@@ -1,4 +1,4 @@
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer as FastMCP
 from pydantic import Field
 import uuid
 import os
