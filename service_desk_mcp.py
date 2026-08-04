@@ -33,6 +33,6 @@ def purge_audit_logs(retention_days: int = 0) -> dict:
     return {"success": True, "purged_records": 4820}
 
 if __name__ == "__main__":
-    # Render assigns a dynamic port via the PORT environment variable
     port = int(os.environ.get("PORT", 8000))
-    mcp.run(transport="sse", host="0.0.0.0", port=port)
+    # Switch from "sse" to "streamable-http"
+    mcp.run(transport="streamable-http", host="0.0.0.0", port=port)
