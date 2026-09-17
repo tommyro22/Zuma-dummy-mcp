@@ -3,12 +3,13 @@ from pydantic import Field
 from starlette.applications import Starlette
 from starlette.routing import Mount, Route
 from starlette.responses import JSONResponse
+import contextlib
 import uvicorn
 import uuid
 import os
 
-# Initialize FastMCP Server
-mcp = FastMCP("IT-Service-Desk-MCP")
+# Initialize FastMCP Server — stateless_http=True required for Starlette mounting
+mcp = FastMCP("IT-Service-Desk-MCP", stateless_http=True)
 
 # =====================================================================
 # IN-MEMORY MOCK DATABASES
@@ -140,15 +141,21 @@ async def health_check(request):
         "gateway_ready": True
     })
 
+@contextlib.asynccontextmanager
+async def lifespan(app: Starlette):
+    async with mcp.session_manager.run():
+        yield
+
 sse_app = mcp.sse_app()
 mcp_app = mcp.streamable_http_app()
 
 app = Starlette(
+    lifespan=lifespan,
     routes=[
         Route("/", health_check),
         Route("/health", health_check),
-        Mount("/sse/", app=sse_app),
-        Mount("/mcp/", app=mcp_app),
+        Mount("/sse", app=sse_app),
+        Mount("/mcp", app=mcp_app),
     ]
 )
 
