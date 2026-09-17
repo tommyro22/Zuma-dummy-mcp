@@ -1,6 +1,9 @@
 from mcp.server import MCPServer as FastMCP
 from pydantic import Field
+from starlette.applications import Starlette
+from starlette.routing import Mount, Route
 from starlette.responses import JSONResponse
+import uvicorn
 import uuid
 import os
 
@@ -13,17 +16,17 @@ mcp = FastMCP("IT-Service-Desk-MCP")
 
 TICKETS = {
     "TICK-101": {
-        "user_id": "usr_882", 
-        "customer_id": "CUST-104", 
-        "issue": "CRM Permission Denied on Credit Override", 
-        "status": "Open", 
+        "user_id": "usr_882",
+        "customer_id": "CUST-104",
+        "issue": "CRM Permission Denied on Credit Override",
+        "status": "Open",
         "priority": "High"
     },
     "TICK-102": {
-        "user_id": "usr_104", 
-        "customer_id": "CUST-880", 
-        "issue": "VPN Access Issue", 
-        "status": "Resolved", 
+        "user_id": "usr_104",
+        "customer_id": "CUST-880",
+        "issue": "VPN Access Issue",
+        "status": "Resolved",
         "priority": "Normal"
     }
 }
@@ -34,17 +37,15 @@ USER_PERMISSIONS = {
 }
 
 # =====================================================================
-# WAKE-UP & HEALTH CHECK ROUTES (No More Browser 404s)
+# HEALTH CHECK
 # =====================================================================
 
-@mcp.custom_route("/", methods=["GET"])
-@mcp.custom_route("/health", methods=["GET"])
 async def health_check(request):
     """Wake-up and health check endpoint for Render free-tier containers."""
     return JSONResponse({
         "status": "healthy",
         "service": "IT-Service-Desk-MCP",
-        "protocol": "Streamable-HTTP (/mcp)",
+        "protocols": ["Streamable-HTTP (/mcp)", "SSE (/sse)"],
         "active_tickets": len(TICKETS),
         "gateway_ready": True
     })
@@ -54,7 +55,9 @@ async def health_check(request):
 # =====================================================================
 
 @mcp.tool()
-def get_ticket_status(ticket_id: str = Field(description="Ticket ID (e.g., TICK-101)")) -> dict:
+def get_ticket_status(
+    ticket_id: str = Field(description="Ticket ID (e.g., TICK-101)")
+) -> dict:
     """Retrieve IT support ticket status and details."""
     if ticket_id in TICKETS:
         return {"found": True, "ticket": TICKETS[ticket_id]}
@@ -90,9 +93,9 @@ def create_support_ticket(
     """Create a new IT support ticket."""
     new_id = f"TICK-{uuid.uuid4().hex[:4].upper()}"
     TICKETS[new_id] = {
-        "user_id": user_id, 
-        "customer_id": customer_id, 
-        "issue": issue_description, 
+        "user_id": user_id,
+        "customer_id": customer_id,
+        "issue": issue_description,
         "status": "Open",
         "priority": "Normal"
     }
@@ -138,10 +141,23 @@ def purge_audit_logs(
     """DESTRUCTIVE: Permanently delete system and compliance audit logs."""
     return {"success": True, "purged_records": 4820}
 
+# =====================================================================
+# APP STARTUP
+# =====================================================================
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
-    mcp.run(
-        transport=["streamable-http", "sse"],
-        host="0.0.0.0",
-        port=port
+
+    sse_app = mcp.sse_app()
+    mcp_app = mcp.streamable_http_app()
+
+    app = Starlette(
+        routes=[
+            Route("/", health_check),
+            Route("/health", health_check),
+            Mount("/sse", app=sse_app),
+            Mount("/mcp", app=mcp_app),
+        ]
     )
+
+    uvicorn.run(app, host="0.0.0.0", port=port)
