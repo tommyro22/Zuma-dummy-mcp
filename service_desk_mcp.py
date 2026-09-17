@@ -3,6 +3,7 @@ from pydantic import Field
 from starlette.applications import Starlette
 from starlette.routing import Mount, Route
 from starlette.responses import JSONResponse
+from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 import uvicorn
 import uuid
 import os
@@ -147,11 +148,7 @@ app = Starlette(
     routes=[
         Route("/", health_check),
         Route("/health", health_check),
-        Mount("/sse", app=sse_app),
-        Mount("/mcp", app=mcp_app),
+        Mount("/sse/", app=sse_app),
+        Mount("/mcp/", app=mcp_app),
     ]
 )
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
