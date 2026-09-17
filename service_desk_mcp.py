@@ -175,12 +175,10 @@ app = Starlette(
         Route("/", health_check, methods=["GET", "POST"]),
         Route("/health", health_check, methods=["GET", "POST"]),
         Route("/mcp", mcp_endpoint, methods=["GET"]),
-        Route("/mcp/", mcp_endpoint, methods=["GET"]),
         Mount("/mcp", app=mcp_app),
         Mount("/sse", app=sse_app),
     ]
 )
-
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
