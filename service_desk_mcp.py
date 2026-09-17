@@ -1,16 +1,10 @@
 from mcp.server.fastmcp import FastMCP
 from pydantic import Field
-from starlette.applications import Starlette
-from starlette.routing import Mount, Route
-from starlette.responses import JSONResponse
-from starlette.requests import Request
-import contextlib
-import uvicorn
 import uuid
 import os
 
-# stateless_http=True, streamable_http_path="/" means FastMCP serves at root
-mcp = FastMCP("IT-Service-Desk-MCP", stateless_http=True, streamable_http_path="/mcp/")
+# Initialize FastMCP Server
+mcp = FastMCP("IT-Service-Desk-MCP", stateless_http=True)
 
 # =====================================================================
 # IN-MEMORY MOCK DATABASES
@@ -133,31 +127,5 @@ def purge_audit_logs(
 # APP STARTUP
 # =====================================================================
 
-async def health_check(request: Request):
-    return JSONResponse({
-        "status": "healthy",
-        "service": "IT-Service-Desk-MCP",
-        "protocols": ["Streamable-HTTP (/mcp)"],
-        "active_tickets": len(TICKETS),
-        "gateway_ready": True
-    })
-
-@contextlib.asynccontextmanager
-async def lifespan(app: Starlette):
-    async with mcp.session_manager.run():
-        yield
-
-mcp_app = mcp.streamable_http_app()
-
-app = Starlette(
-    lifespan=lifespan,
-    routes=[
-        Route("/", health_check, methods=["GET", "POST"]),
-        Route("/health", health_check, methods=["GET", "POST"]),
-        Mount("/", app=mcp_app),
-    ]
-)
-
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    mcp.run(transport="streamable-http", host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
