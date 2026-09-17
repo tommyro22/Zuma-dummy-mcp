@@ -10,7 +10,7 @@ import uuid
 import os
 
 # stateless_http=True, streamable_http_path="/" means FastMCP serves at root
-mcp = FastMCP("IT-Service-Desk-MCP", stateless_http=True, streamable_http_path="/mcp")
+mcp = FastMCP("IT-Service-Desk-MCP", stateless_http=True, streamable_http_path="/mcp/")
 
 # =====================================================================
 # IN-MEMORY MOCK DATABASES
