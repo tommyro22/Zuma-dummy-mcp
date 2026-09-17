@@ -151,6 +151,7 @@ mcp_app = mcp.streamable_http_app()
 
 app = Starlette(
     lifespan=lifespan,
+    redirect_slashes=False,
     routes=[
         Route("/", health_check, methods=["GET", "POST"]),
         Route("/health", health_check, methods=["GET", "POST"]),
