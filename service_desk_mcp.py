@@ -137,7 +137,7 @@ async def health_check(request: Request):
     return JSONResponse({
         "status": "healthy",
         "service": "IT-Service-Desk-MCP",
-        "protocols": ["SSE (/sse)", "Streamable-HTTP (/mcp)"],
+        "protocols": ["Streamable-HTTP (/mcp)"],
         "active_tickets": len(TICKETS),
         "gateway_ready": True
     })
@@ -147,7 +147,6 @@ async def lifespan(app: Starlette):
     async with mcp.session_manager.run():
         yield
 
-sse_app = mcp.sse_app()
 mcp_app = mcp.streamable_http_app()
 
 app = Starlette(
@@ -155,8 +154,7 @@ app = Starlette(
     routes=[
         Route("/", health_check, methods=["GET", "POST"]),
         Route("/health", health_check, methods=["GET", "POST"]),
-        Mount("/mcp", app=mcp_app),
-        Mount("/sse", app=sse_app),
+        Mount("/", app=mcp_app),
     ]
 )
 
