@@ -142,10 +142,6 @@ async def health_check(request: Request):
         "gateway_ready": True
     })
 
-async def mcp_endpoint(request: Request):
-    """Pass all requests directly to mcp_app."""
-    return await mcp_app(request.scope, request.receive, request.send)
-
 @contextlib.asynccontextmanager
 async def lifespan(app: Starlette):
     async with mcp.session_manager.run():
@@ -159,7 +155,7 @@ app = Starlette(
     routes=[
         Route("/", health_check, methods=["GET", "POST"]),
         Route("/health", health_check, methods=["GET", "POST"]),
-        Route("/mcp", mcp_endpoint, methods=["GET", "POST"]),
+        Mount("/mcp", app=mcp_app),
         Mount("/sse", app=sse_app),
     ]
 )
