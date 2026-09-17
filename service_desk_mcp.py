@@ -6,13 +6,9 @@ from starlette.responses import JSONResponse
 import uvicorn
 import uuid
 import os
-import inspect
 
 # Initialize FastMCP Server
 mcp = FastMCP("IT-Service-Desk-MCP")
-
-# Temporary debug - remove after testing
-print("FastMCP methods:", [m for m in dir(mcp) if not m.startswith('_')])
 
 # =====================================================================
 # IN-MEMORY MOCK DATABASES
@@ -149,8 +145,6 @@ def purge_audit_logs(
 # APP STARTUP
 # =====================================================================
 
-port = int(os.environ.get("PORT", 8000))
-
 sse_app = mcp.sse_app()
 mcp_app = mcp.streamable_http_app()
 
@@ -164,4 +158,5 @@ app = Starlette(
 )
 
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
