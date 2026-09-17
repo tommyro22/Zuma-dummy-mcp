@@ -162,9 +162,26 @@ async def mcp_endpoint(request: Request):
     })
 
 @contextlib.asynccontextmanager
-async def lifespan(app: Starlette):
-    async with mcp.session_manager.run():
-        yield
+async def mcp_endpoint(request: Request):
+    if request.method == "GET":
+        return JSONResponse({
+            "name": "IT-Service-Desk-MCP",
+            "version": "1.0.0",
+            "protocol": "mcp",
+            "transport": "streamable-http",
+            "tools": [
+                "get_ticket_status",
+                "search_tickets_by_customer",
+                "check_user_permissions",
+                "create_support_ticket",
+                "escalate_ticket_priority",
+                "grant_admin_privilege",
+                "force_password_reset",
+                "purge_audit_logs"
+            ]
+        })
+    # For POST — pass through to mcp_app
+    return await mcp_app(request.scope, request.receive, request.send)
 
 sse_app = mcp.sse_app()
 mcp_app = mcp.streamable_http_app()
@@ -174,8 +191,7 @@ app = Starlette(
     routes=[
         Route("/", health_check, methods=["GET", "POST"]),
         Route("/health", health_check, methods=["GET", "POST"]),
-        Route("/mcp", mcp_endpoint, methods=["GET"]),
-        Mount("/mcp", app=mcp_app),
+        Route("/mcp", mcp_endpoint, methods=["GET", "POST"]),
         Mount("/sse", app=sse_app),
     ]
 )
