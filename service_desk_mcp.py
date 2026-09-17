@@ -37,20 +37,6 @@ USER_PERMISSIONS = {
 }
 
 # =====================================================================
-# HEALTH CHECK
-# =====================================================================
-
-async def health_check(request):
-    """Wake-up and health check endpoint for Render free-tier containers."""
-    return JSONResponse({
-        "status": "healthy",
-        "service": "IT-Service-Desk-MCP",
-        "protocols": ["Streamable-HTTP (/mcp)", "SSE (/sse)"],
-        "active_tickets": len(TICKETS),
-        "gateway_ready": True
-    })
-
-# =====================================================================
 # ACT 1: SAFE INVESTIGATION TOOLS (IARA: ALLOW)
 # =====================================================================
 
@@ -145,15 +131,23 @@ def purge_audit_logs(
 # APP STARTUP
 # =====================================================================
 
+async def health_check(request):
+    """Wake-up and health check endpoint for Render free-tier containers."""
+    return JSONResponse({
+        "status": "healthy",
+        "service": "IT-Service-Desk-MCP",
+        "protocols": ["SSE"],
+        "active_tickets": len(TICKETS),
+        "gateway_ready": True
+    })
+
 sse_app = mcp.sse_app()
-mcp_app = mcp.streamable_http_app()
 
 app = Starlette(
     routes=[
         Route("/", health_check),
         Route("/health", health_check),
-        Mount("/sse", app=sse_app),
-        Mount("/mcp", app=mcp_app),
+        Mount("/", app=sse_app),
     ]
 )
 
