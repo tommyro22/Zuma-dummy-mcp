@@ -143,26 +143,7 @@ async def health_check(request: Request):
     })
 
 async def mcp_endpoint(request: Request):
-    """Handle GET and POST discovery requests from Zuma and other clients."""
-    return JSONResponse({
-        "name": "IT-Service-Desk-MCP",
-        "version": "1.0.0",
-        "protocol": "mcp",
-        "transport": "streamable-http",
-        "tools": [
-            "get_ticket_status",
-            "search_tickets_by_customer",
-            "check_user_permissions",
-            "create_support_ticket",
-            "escalate_ticket_priority",
-            "grant_admin_privilege",
-            "force_password_reset",
-            "purge_audit_logs"
-        ]
-    })
-
-@contextlib.asynccontextmanager
-async def mcp_endpoint(request: Request):
+    """Handle GET discovery and POST MCP requests."""
     if request.method == "GET":
         return JSONResponse({
             "name": "IT-Service-Desk-MCP",
@@ -183,6 +164,11 @@ async def mcp_endpoint(request: Request):
     # For POST — pass through to mcp_app
     return await mcp_app(request.scope, request.receive, request.send)
 
+@contextlib.asynccontextmanager
+async def lifespan(app: Starlette):
+    async with mcp.session_manager.run():
+        yield
+
 sse_app = mcp.sse_app()
 mcp_app = mcp.streamable_http_app()
 
@@ -195,6 +181,7 @@ app = Starlette(
         Mount("/sse", app=sse_app),
     ]
 )
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
