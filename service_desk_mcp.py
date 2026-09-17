@@ -3,6 +3,7 @@ from pydantic import Field
 from starlette.applications import Starlette
 from starlette.routing import Mount, Route
 from starlette.responses import JSONResponse
+from starlette.requests import Request
 import contextlib
 import uvicorn
 import uuid
@@ -132,13 +133,32 @@ def purge_audit_logs(
 # APP STARTUP
 # =====================================================================
 
-async def health_check(request):
+async def health_check(request: Request):
     return JSONResponse({
         "status": "healthy",
         "service": "IT-Service-Desk-MCP",
         "protocols": ["SSE (/sse)", "Streamable-HTTP (/mcp)"],
         "active_tickets": len(TICKETS),
         "gateway_ready": True
+    })
+
+async def mcp_endpoint(request: Request):
+    """Handle GET and POST discovery requests from Zuma and other clients."""
+    return JSONResponse({
+        "name": "IT-Service-Desk-MCP",
+        "version": "1.0.0",
+        "protocol": "mcp",
+        "transport": "streamable-http",
+        "tools": [
+            "get_ticket_status",
+            "search_tickets_by_customer",
+            "check_user_permissions",
+            "create_support_ticket",
+            "escalate_ticket_priority",
+            "grant_admin_privilege",
+            "force_password_reset",
+            "purge_audit_logs"
+        ]
     })
 
 @contextlib.asynccontextmanager
@@ -152,10 +172,12 @@ mcp_app = mcp.streamable_http_app()
 app = Starlette(
     lifespan=lifespan,
     routes=[
-        Route("/", health_check),
-        Route("/health", health_check),
-        Mount("/sse", app=sse_app),
+        Route("/", health_check, methods=["GET", "POST"]),
+        Route("/health", health_check, methods=["GET", "POST"]),
+        Route("/mcp", mcp_endpoint, methods=["GET"]),
+        Route("/mcp/", mcp_endpoint, methods=["GET"]),
         Mount("/mcp", app=mcp_app),
+        Mount("/sse", app=sse_app),
     ]
 )
 
