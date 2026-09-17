@@ -9,8 +9,8 @@ import uvicorn
 import uuid
 import os
 
-# Initialize FastMCP Server — stateless_http=True required for Starlette mounting
-mcp = FastMCP("IT-Service-Desk-MCP", stateless_http=True)
+# stateless_http=True, streamable_http_path="/" means FastMCP serves at root
+mcp = FastMCP("IT-Service-Desk-MCP", stateless_http=True, streamable_http_path="/mcp")
 
 # =====================================================================
 # IN-MEMORY MOCK DATABASES
@@ -151,7 +151,6 @@ mcp_app = mcp.streamable_http_app()
 
 app = Starlette(
     lifespan=lifespan,
-    redirect_slashes=False,
     routes=[
         Route("/", health_check, methods=["GET", "POST"]),
         Route("/health", health_check, methods=["GET", "POST"]),
