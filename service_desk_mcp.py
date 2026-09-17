@@ -1,4 +1,4 @@
-from mcp.server import MCPServer as FastMCP
+from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 from starlette.applications import Starlette
 from starlette.routing import Mount, Route
