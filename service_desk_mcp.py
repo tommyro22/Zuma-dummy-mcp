@@ -6,9 +6,13 @@ from starlette.responses import JSONResponse
 import uvicorn
 import uuid
 import os
+import inspect
 
 # Initialize FastMCP Server
 mcp = FastMCP("IT-Service-Desk-MCP")
+
+# Temporary debug - remove after testing
+print("FastMCP methods:", [m for m in dir(mcp) if not m.startswith('_')])
 
 # =====================================================================
 # IN-MEMORY MOCK DATABASES
