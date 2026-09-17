@@ -145,19 +145,19 @@ def purge_audit_logs(
 # APP STARTUP
 # =====================================================================
 
+port = int(os.environ.get("PORT", 8000))
+
+sse_app = mcp.sse_app()
+mcp_app = mcp.streamable_http_app()
+
+app = Starlette(
+    routes=[
+        Route("/", health_check),
+        Route("/health", health_check),
+        Mount("/sse", app=sse_app),
+        Mount("/mcp", app=mcp_app),
+    ]
+)
+
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-
-    sse_app = mcp.sse_app()
-    mcp_app = mcp.streamable_http_app()
-
-    app = Starlette(
-        routes=[
-            Route("/", health_check),
-            Route("/health", health_check),
-            Mount("/sse", app=sse_app),
-            Mount("/mcp", app=mcp_app),
-        ]
-    )
-
     uvicorn.run(app, host="0.0.0.0", port=port)
